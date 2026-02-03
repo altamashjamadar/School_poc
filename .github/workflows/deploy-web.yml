@@ -26,7 +26,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'master'
-          flutter-version: '3.41.x'          # ← fixed version – change to your project's Flutter version if needed
+        
           
 
       - name: Enable web
