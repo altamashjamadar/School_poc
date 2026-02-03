@@ -23,7 +23,7 @@ class TeacherApp extends StatelessWidget {
       theme: ThemeData(
         fontFamily: 'Roboto',
         scaffoldBackgroundColor: const Color(0xFFF5F6FA),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6A5AE0)),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 94, 222, 245)),
         useMaterial3: true,
         cardTheme:  CardThemeData(
           elevation: 3,
@@ -88,58 +88,95 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.indigo[900]!, Colors.indigo[400]!],
+            colors: [Colors.blue[900]!, Colors.blue[400]!],
           ),
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
-              child: Card(
-                elevation: 12,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.school_rounded, size: 68, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(height: 24),
-                      const Text('Teacher Login', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 32),
-                      TextField(
-                        controller: _usernameCtrl,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _passwordCtrl,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          icon: _loading
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                              : const Icon(Icons.login),
-                          label: Text(_loading ? 'Signing in...' : 'Login'),
-                          onPressed: _loading ? null : _login,
-                        ),
-                      ),
-                    ],
+              child: Column(
+                children: [
+                  // i want to add logo and name anbove the card
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'MG Public School',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Card(
+                    elevation: 12,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.school_rounded, size: 68, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(height: 24),
+                          const Text('Teacher Login', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 32),
+                          TextField(
+                            controller: _usernameCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Username',
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          TextField(
+                            controller: _passwordCtrl,
+                            obscureText: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon: Icon(Icons.lock),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton.icon(
+                              icon: _loading
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                                  : const Icon(Icons.login),
+                              label: Text(_loading ? 'Signing in...' : 'Login'),
+                              onPressed: _loading ? null : _login,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Divider(height: 40),
+                         RichText(text: TextSpan(    //dont have account create one
+                            text: "Don't have an account? ",
+                            style: TextStyle(color: Colors.black54),
+                            children: [
+                              TextSpan(
+                                text: 'Contact Admin',
+                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          )),
+
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -161,6 +198,8 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+
           child: Column(
             children: [
               DashboardHeader(teacherName: teacherName),
@@ -303,15 +342,16 @@ class TodaySchedule extends StatelessWidget {
             decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
             child: const Icon(Icons.book, color: Colors.white),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(subject, style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(subject, style: const TextStyle(fontWeight: FontWeight.bold,fontSize: 16)),
               Text(
-                cls.isEmpty ? time : 'Class $cls • $time',
+                cls.isEmpty ? time : 'Class $cls ',
                 style: const TextStyle(color: Colors.grey),
               ),
+              Text(cls.isEmpty ? '' : 'Time: $time', style: const TextStyle(color: Colors.grey)),
             ],
           ),
         ],
@@ -340,18 +380,19 @@ class QuickActions extends StatelessWidget {
             children: [
               _ActionTile(
                 title: "Attendance",
-                icon: Icons.check_circle_rounded,
-                color: Colors.indigo,
+                icon: Icons.person,
+                color: const Color(0xFF3F51B5),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendanceScreen())),
               ),
               _ActionTile(
                 title: "Announcements",
-                icon: Icons.campaign_rounded,
-                color: Colors.deepPurple,
+                icon: Icons.message,
+                color: const Color(0xFFFF9700),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnouncementScreen())),
               ),
-              _ActionTile(title: "Timetable", icon: Icons.calendar_month, color: Colors.purple),
-              _ActionTile(title: "Assignments", icon: Icons.assignment_turned_in, color: Colors.orange),
+              _ActionTile(title: "HomeWork", icon: Icons.book, color: const Color(0xFF9C28B1)),
+              _ActionTile(title: "Grades", icon: Icons.star_border, color: const Color(0xFF4CB050)),
+              _ActionTile(title: "Assignments", icon: Icons.assignment_rounded, color: const Color(0xFFE91E63)),
             ],
           ),
         ],
@@ -420,10 +461,23 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       {'roll': 3, 'name': 'Rohan', 'gender': 'Boy', 'present': true},
       {'roll': 4, 'name': 'Priya', 'gender': 'Girl', 'present': true},
       {'roll': 5, 'name': 'Vikram', 'gender': 'Boy', 'present': true},
-      {'roll': 6, 'name': 'ABhisehk', 'gender': 'Boy', 'present': true},
-      {'roll': 7, 'name': 'Saad', 'gender': 'Boy', 'present': true},
-      {'roll': 8, 'name': 'Sahil', 'gender': 'Boy', 'present': true},
-            
+         {'roll': 6, 'name': 'Sneha', 'gender': 'Girl', 'present': true},
+      {'roll': 7, 'name': 'Arjun', 'gender': 'Boy', 'present': true},
+      {'roll': 8, 'name': 'Meera', 'gender': 'Girl', 'present': true},
+      {'roll': 9, 'name': 'Riya', 'gender': 'Girl', 'present': true},
+      {'roll': 10, 'name': 'Kabir', 'gender': 'Boy', 'present': true},
+      
+      {'roll': 11, 'name': 'Karan', 'gender': 'Boy', 'present': true},
+      {'roll': 12, 'name': 'Kavya', 'gender': 'Girl', 'present': true},
+      {'roll': 13, 'name': 'Abhishek', 'gender': 'Boy', 'present': true},
+      {'roll': 14, 'name': 'Riya', 'gender': 'Girl', 'present': true},
+      {'roll': 15, 'name': 'Rahul', 'gender': 'Boy', 'present': true},
+         {'roll': 16, 'name': 'Neha', 'gender': 'Girl', 'present': true},
+      {'roll': 17, 'name': 'Arjun', 'gender': 'Boy', 'present': true},
+      {'roll': 18, 'name': 'Meera', 'gender': 'Girl', 'present': true},
+      {'roll': 19, 'name': 'Riya', 'gender': 'Girl', 'present': true},
+      {'roll': 20, 'name': 'Kabir', 'gender': 'Boy', 'present': true},
+      
     ],
     '9-B': [
       {'roll': 1, 'name': 'Sneha', 'gender': 'Girl', 'present': true},
@@ -504,13 +558,19 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Mark Attendance')),
+      appBar: AppBar(title: const Text('Attendance'),
+      backgroundColor: Colors.blue[900],
+      foregroundColor: Colors.white,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Text("Select Your Class.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Select Class', prefixIcon: Icon(Icons.class_)),
+              decoration: const InputDecoration(labelText: 'Select Class', prefixIcon: Icon(Icons.class_),border: OutlineInputBorder(),),
               value: selectedClass,
               items: classStudents.keys.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
               onChanged: (val) {
@@ -521,26 +581,37 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               },
             ),
             const SizedBox(height: 16),
+            // Text("Select Subject.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            // const SizedBox(height: 4),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Select Subject', prefixIcon: Icon(Icons.book)),
+              decoration: const InputDecoration(labelText: 'Select Subject', prefixIcon: Icon(Icons.book),border: OutlineInputBorder(),),
               value: selectedSubject,
               items: subjects.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
               onChanged: (val) => setState(() => selectedSubject = val),
             ),
             const SizedBox(height: 20),
+            Text("Student List", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            // i want to show all students in a c big card 
+
+           
             if (students.isNotEmpty)
+             
               Expanded(
+                
                 child: ListView.builder(
+                  physics: const BouncingScrollPhysics(),
                   itemCount: students.length,
                   itemBuilder: (context, i) {
                     final s = students[i];
                     return Card(
                       child: ListTile(
+                        
                         leading: CircleAvatar(
                           child: Text(s['name'][0]),
                           backgroundColor: s['gender'] == 'Boy' ? Colors.blue[200] : Colors.pink[200],
                         ),
-                        title: Text('${s['roll']}. ${s['name']} (${s['gender']})'),
+                        title: Text('${s['roll']}. ${s['name']} '),
                         trailing: Switch(
                           value: s['present'],
                           onChanged: (v) => setState(() => s['present'] = v),
@@ -551,6 +622,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   },
                 ),
               ),
+              
             if (selectedClass != null && selectedSubject != null && students.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -560,19 +632,22 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                     backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: 
+Colors.white, 
                   ),
                   onPressed: _generateReport,
                 ),
               ),
+
           ],
+          
         ),
       ),
     );
   }
 }
 
-
-//Anouncemt screen
+//Annoucement Screen
 
 class AnnouncementScreen extends StatefulWidget {
   const AnnouncementScreen({super.key});
@@ -687,56 +762,89 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Create Announcement")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: _textController,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: "Announcement text",
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
+      appBar: AppBar(title: const Text("Announcements"),
+      backgroundColor: Colors.blue[900],
+      foregroundColor: Colors.white,),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Text(
+                "Enter the announcement.",
+                style: TextStyle(fontSize: 24, color: Colors.black87),
               ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  icon: _generating
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.4))
-                      : const Icon(Icons.record_voice_over),
-                  label: Text(_generating ? "Generating..." : "Generate Audio"),
-                  onPressed: _generating ? null : _generateAudio,
+              const SizedBox(height: 20),
+              TextField(
+                controller: _textController,
+                maxLines: 6,
+                decoration: const InputDecoration(
+                  labelText: "Announcement text",
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.share),
-                  label: const Text("Share"),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green[700], foregroundColor: Colors.white),
-                  onPressed: _shareAudio,
-                ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            if (_ready)
-              Card(
-                color: Colors.green[50],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: Icon(
-                    _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
-                    color: Colors.green,
-                    size: 40,
+              ),
+              // a clear button to clear the text field
+              // Align(
+              //   alignment: Alignment.centerRight,
+              //   child: TextButton.icon(
+              //     icon: const Icon(Icons.clear),
+              //     label: const Text("Clear"),
+              //     onPressed: () {
+              //       _textController.clear();
+              //       setState(() {
+              //         // _audioPath = null;
+              //         // _ready = false;
+              //       });
+              //     },
+              //   ),
+              // ),
+              const SizedBox(height: 24),
+              Column(
+                // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      // backgroundColor: _generating ? Colors.grey : Theme.of(context).colorScheme.primary,
+                    ),
+                    icon: _generating
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.4))
+                        : const Icon(Icons.record_voice_over),
+                    label: Text(_generating ? "Generating..." : "Generate Audio"),
+                    onPressed: _generating ? null : _generateAudio,
                   ),
-                  title: Text(_isPlaying ? "Playing..." : "Play generated audio"),
-                  subtitle: Text(_audioPath!.split('/').last, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  onTap: _isPlaying ? _stopAudio : _playAudio,
-                ),
+                    const SizedBox(height: 12),
+                  ElevatedButton.icon(
+        
+                    icon: const Icon(Icons.share),
+                    label: const Text("Share"),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      backgroundColor: Colors.green[700], foregroundColor: Colors.white),
+                    onPressed: _shareAudio,
+                  ),
+                ],
               ),
-          ],
+              const SizedBox(height: 32),
+              if (_ready)
+                Card(
+                  color: Colors.green[50],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: Icon(
+                      _isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_fill_rounded,
+                      color: Colors.green,
+                      size: 40,
+                    ),
+                    title: Text(_isPlaying ? "Playing..." : "Play generated audio"),
+                    subtitle: Text(_audioPath!.split('/').last, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    onTap: _isPlaying ? _stopAudio : _playAudio,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
