@@ -7,7 +7,6 @@ import 'package:school_poc/services/tts_native_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-// import 'package:audioplayers/audioplayers.dart';
 import 'package:just_audio/just_audio.dart';
 void main() {
   runApp(const TeacherApp());
@@ -36,9 +35,9 @@ class TeacherApp extends StatelessWidget {
   }
 }
 
-// ────────────────────────────────────────────────
-//                  LOGIN SCREEN
-// ────────────────────────────────────────────────
+
+//Login Screen
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -187,9 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// ────────────────────────────────────────────────
-//                  HOME SCREEN
-// ────────────────────────────────────────────────
+//Home Screen
+
 class HomeScreen extends StatelessWidget {
   final String teacherName;
 
@@ -440,9 +438,9 @@ class _ActionTile extends StatelessWidget {
   }
 }
 
-// ────────────────────────────────────────────────
-//               ATTENDANCE SCREEN
-// ────────────────────────────────────────────────
+
+//Attendaance Screen
+
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
 
@@ -660,7 +658,7 @@ class AnnouncementScreen extends StatefulWidget {
 
 class _AnnouncementScreenState extends State<AnnouncementScreen> {
   final _textController = TextEditingController();
-  final _audioPlayer = AudioPlayer(); // just_audio
+  final _audioPlayer = AudioPlayer();
 
   String? _audioPath;
   bool _generating = false;
