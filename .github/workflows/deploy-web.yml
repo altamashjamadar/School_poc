@@ -17,32 +17,27 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          flutter-version: '3.24.3'          # ← fixed version – change to your project's Flutter version if needed
           channel: 'stable'
 
       - name: Enable web
         run: flutter config --enable-web
 
-      - name: Get packages
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web
-        run: |
-          flutter build web --release \
-            --base-href "/${{ github.event.repository.name }}/"
+      - name: Build web app
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
-      - name: Setup Pages
+      - name: Setup GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
