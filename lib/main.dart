@@ -3,12 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:school_poc/screens/admin_login_screen.dart';
 import 'package:school_poc/services/tts_native_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:just_audio/just_audio.dart';
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firebase_options.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const TeacherApp());
 }
 
@@ -161,17 +169,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 12),
                           Divider(height: 40),
-                         RichText(text: TextSpan(    //dont have account create one
-                            text: "Don't have an account? ",
-                            style: TextStyle(color: Colors.black54),
-                            children: [
-                              TextSpan(
-                                text: 'Contact Admin',
-                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          )),
-
+                        //  RichText(text: TextSpan(    //dont have account create one
+                        //     text: "Don't have an account? ",
+                        //     style: TextStyle(color: Colors.black54),
+                        //     children: [
+                        //       TextSpan(
+                        //         text: 'Contact Admin',
+                        //         style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                        //       ),
+                        //     ],
+                        //   )),
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+    );
+  },
+  child: const Text("Login as Admin"),
+)
                         ],
                       ),
                     ),
@@ -196,6 +212,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -203,6 +220,29 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             children: [
               DashboardHeader(teacherName: teacherName),
+              // logout button
+            //         Row
+            // (
+            //   mainAxisAlignment: MainAxisAlignment.end,
+            //   children: [
+            //     Padding(
+            //       padding: const EdgeInsets.only(right: 16, top: 8),
+            //       child: ElevatedButton.icon(
+            //         icon: const Icon(Icons.logout),
+            //         label: const Text('Logout'),
+            //         style: ElevatedButton.styleFrom(
+            //           backgroundColor: Colors.red,
+            //         ),
+            //         onPressed: () {
+            //           Navigator.pushReplacement(
+            //             context,
+            //             MaterialPageRoute(builder: (_) => const LoginScreen()),
+            //           );
+            //         },
+            //       ),
+            //     ),
+            //   ],
+            // ),
               const SizedBox(height: 16),
               const TodaySchedule(),
               const SizedBox(height: 24),
@@ -393,6 +433,8 @@ class QuickActions extends StatelessWidget {
               _ActionTile(title: "HomeWork", icon: Icons.book, color: const Color(0xFF9C28B1)),
               _ActionTile(title: "Grades", icon: Icons.star_border, color: const Color(0xFF4CB050)),
               _ActionTile(title: "Assignments", icon: Icons.assignment_rounded, color: const Color(0xFFE91E63)),
+              _ActionTile(title: "Admin", icon: Icons.admin_panel_settings, color: const Color(0xFF607D8B),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminLoginScreen())),),
             ],
           ),
         ],
@@ -488,7 +530,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   final List<String> subjects = ['Mathematics', 'Science', 'English', 'Social Science'];
 
-  void _generateReport() {
+  Future<void> _generateReport() async {
     int present = students.where((s) => s['present']).length;
     int absent = students.length - present;
     int boysPresent = students.where((s) => s['gender'] == 'Boy' && s['present']).length;
@@ -553,6 +595,30 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
       ),
     );
+   try {
+    await FirebaseFirestore.instance.collection('attendance_reports').add({
+      'class': selectedClass,
+      'subject': selectedSubject,
+      'date': DateTime.now().toString().substring(0, 10),
+      'timestamp': FieldValue.serverTimestamp(),
+      'total': students.length,
+      'present': report['present'],
+      'absent': report['absent'],
+      'boysPresent': report['boysPresent'],
+      'boysAbsent': report['boysAbsent'],
+      'girlsPresent': report['girlsPresent'],
+      'girlsAbsent': report['girlsAbsent'],
+      // optional: 'teacher': current teacher name
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Report saved to admin panel")),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Failed to save report: $e")),
+    );
+  }
   }
 
   @override
