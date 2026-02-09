@@ -438,6 +438,8 @@ class QuickActions extends StatelessWidget {
               _ActionTile(title: "Assignments", icon: Icons.assignment_rounded, color: const Color(0xFFE91E63)),
               _ActionTile(title: "Admin", icon: Icons.admin_panel_settings, color: const Color(0xFF607D8B),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),),
+                // Fees remaining
+              _ActionTile(title: "Fees Remaining", icon: Icons.money_off_csred, color: const Color(0xFF009688), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FeesRemainingScreen())),),
             ],
           ),
         ],
@@ -924,5 +926,308 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     _textController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+}
+
+
+class FeesRemainingScreen extends StatefulWidget {
+  const FeesRemainingScreen({super.key});
+
+  @override
+  State<FeesRemainingScreen> createState() => _FeesRemainingScreenState();
+}
+
+class _FeesRemainingScreenState extends State<FeesRemainingScreen> {
+  String? selectedClass;
+  String? selectedDivision;
+
+  // Static data - will be replaced with Firebase later
+  static final List<Map<String, dynamic>> allStudents = [
+    // Class 10
+    {'class': '10', 'division': 'A', 'roll': '01', 'name': 'Aarav Sharma', 'total': 48000, 'paid': 32000, 'pending': 16000},
+    {'class': '10', 'division': 'A', 'roll': '02', 'name': 'Ananya Patil', 'total': 48000, 'paid': 48000, 'pending': 0},
+    { 'class': '10', 'division': 'A', 'roll': '03', 'name': 'Vikram Singh', 'total': 48000, 'paid': 24000, 'pending': 24000},
+    {'class': '10', 'division': 'A', 'roll': '04', 'name': 'Sneha Deshmukh', 'total': 48000, 'paid': 48000, 'pending': 0},
+    {'class': '10', 'division': 'A', 'roll': '05', 'name': 'Arjun Jadhav', 'total': 48000, 'paid': 16000, 'pending': 32000},
+    {'class': '10', 'division': 'A', 'roll': '06', 'name': 'Meera Kulkarni', 'total': 48000, 'paid': 40000, 'pending': 8000},
+    {'class': '10', 'division': 'A', 'roll': '07', 'name': 'Riya Kapoor', 'total': 48000, 'paid': 48000, 'pending': 0},
+    {'class': '10', 'division': 'A', 'roll': '08', 'name': 'Kabir Verma', 'total': 48000, 'paid': 20000, 'pending': 28000 },
+    {'class': '10', 'division': 'A', 'roll': '09', 'name': 'Karan Mehta', 'total': 48000, 'paid': 48000, 'pending': 0},
+    {'class': '10', 'division': 'A', 'roll': '10', 'name': 'Kavya Joshi', 'total': 48000, 'paid': 36000, 'pending': 12000},
+    {'class': '10', 'division': 'B', 'roll': '01', 'name': 'Rohan Gupta', 'total': 48000, 'paid': 20000, 'pending': 28000},
+    {'class': '10', 'division': 'B', 'roll': '02', 'name': 'Priya Singh', 'total': 48000, 'paid': 40000, 'pending': 8000},
+
+    // Class 9
+    {'class': '9', 'division': 'A', 'roll': '01', 'name': 'Sneha Deshmukh', 'total': 45000, 'paid': 45000, 'pending': 0},
+    {'class': '9', 'division': 'B', 'roll': '01', 'name': 'Arjun Jadhav', 'total': 45000, 'paid': 15000, 'pending': 30000},
+    {'class': '9', 'division': 'B', 'roll': '02', 'name': 'Meera Kulkarni', 'total': 45000, 'paid': 30000, 'pending': 15000},
+
+    // Class 8
+    {'class': '8', 'division': 'A', 'roll': '01', 'name': 'Vihaan Rao', 'total': 42000, 'paid': 42000, 'pending': 0},
+    {'class': '8', 'division': 'A', 'roll': '02', 'name': 'Diya Nair', 'total': 42000, 'paid': 10000, 'pending': 32000},
+  ];
+
+  // Computed totals
+  int get totalPaid => allStudents.fold(0, (sum, s) => sum + (s['paid'] as int));
+  int get totalPending => allStudents.fold(0, (sum, s) => sum + (s['pending'] as int));
+
+  // Available classes
+  List<String> get availableClasses {
+    final set = <String>{};
+    for (var s in allStudents) set.add(s['class'] as String);
+    return set.toList()..sort();
+  }
+
+  // Available divisions for selected class
+  List<String> get availableDivisions {
+    if (selectedClass == null) return [];
+    final set = <String>{};
+    for (var s in allStudents) {
+      if (s['class'] == selectedClass) set.add(s['division'] as String);
+    }
+    return set.toList()..sort();
+  }
+
+  // Filtered students for selected class + division
+  List<Map<String, dynamic>> get filteredStudents {
+    return allStudents.where((s) {
+      bool match = true;
+      if (selectedClass != null) match = match && s['class'] == selectedClass;
+      if (selectedDivision != null) match = match && s['division'] == selectedDivision;
+      return match;
+    }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.indigo[50],
+      appBar: AppBar(
+        title: const Text("Fees Overview"),
+        centerTitle: true,
+        backgroundColor: Colors.indigo[800],
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.indigo[50]!, Colors.blue[50]!],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            // crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Summary Cards (horizontal scrollable)
+              // SingleChildScrollView(
+                // scrollDirection: Axis.horizontal,
+                Row(
+                  children: [
+                    _buildSummaryCard(
+                      title: "Total Paid",
+                      amount: totalPaid,
+                      icon: Icons.payments,
+                      color: Colors.green[700]!,
+                    ),
+                    const SizedBox(width: 16),
+                    _buildSummaryCard(
+                      title: "Total Pending",
+                      amount: totalPending,
+                      icon: Icons.money_off,
+                      color: Colors.red[700]!,
+                    ),
+                  ],
+                ),
+              // ),
+
+              const SizedBox(height: 24),
+
+              // Filters
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: "Class",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      value: selectedClass,
+                      hint: const Text("Select Class"),
+                      items: availableClasses.map((cls) {
+                        return DropdownMenuItem(value: cls, child: Text("Class $cls"));
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedClass = value;
+                          selectedDivision = null; // reset division when class changes
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: "Division",
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.white,
+                      ),
+                      value: selectedDivision,
+                      hint: const Text("Select Division"),
+                      items: availableDivisions.map((div) {
+                        return DropdownMenuItem(value: div, child: Text("Div $div"));
+                      }).toList(),
+                      onChanged: (value) => setState(() => selectedDivision = value),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              // Student List (only if class + division selected)
+              if (selectedClass != null && selectedDivision != null) ...[
+                Text(
+                  "Students - Class $selectedClass • Div $selectedDivision",
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 16,
+                      headingRowColor: MaterialStateProperty.all(Colors.indigo[100]),
+                      columns: const [
+                        DataColumn(label: Text("Roll", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Name", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Total", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Paid", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Pending", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Action")),
+                      ],
+                      rows: filteredStudents.map((student) {
+                        final pending = student['pending'] as int;
+                        return DataRow(cells: [
+                          DataCell(Text(student['roll'].toString())),
+                          DataCell(Text(student['name'])),
+                          DataCell(Text("₹${student['total']}")),
+                          DataCell(Text("₹${student['paid']}", style: const TextStyle(color: Colors.green))),
+                          DataCell(Text(
+                            "₹$pending",
+                            style: TextStyle(color: pending == 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                          )),
+                          DataCell(
+                            IconButton(
+                              icon: Icon(Icons.share, color: Colors.blue[700]),
+                              onPressed: () => _shareFeesReport(student),
+                              tooltip: "Share Fees Status",
+                            ),
+                          ),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(height: 40),
+                const Center(
+                  child: Text(
+                    "Select Class and Division to view students",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard({
+    required String title,
+    required int amount,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 164,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.9), color.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 40, color: Colors.white),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "₹$amount",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _shareFeesReport(Map<String, dynamic> student) {
+    final name = student['name'];
+    final roll = student['roll'];
+    final cls = student['class'];
+    final div = student['division'];
+    final total = student['total'];
+    final paid = student['paid'];
+    final pending = student['pending'];
+
+    final message = """
+Dear Parent,
+
+Fees Status Update:
+
+Student: $name (Roll No: $roll, Class: $cls - Div $div)
+Total Fees: ₹$total
+Amount Paid: ₹$paid
+Pending Amount: ₹$pending
+
+Please clear the pending fees at the earliest to avoid any inconvenience.
+Contact the school office for payment options or queries.
+
+Thank you,
+MG Public School Administration
+""";
+
+    Share.share(
+      message.trim(),
+      subject: "Fees Status - $name ($cls-$div)",
+    );
   }
 }
