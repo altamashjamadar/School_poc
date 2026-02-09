@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:school_poc/screens/admin_dashboard_screen.dart';
 import 'package:school_poc/screens/admin_login_screen.dart';
 import 'package:school_poc/services/tts_native_service.dart';
 import 'package:share_plus/share_plus.dart';
@@ -183,7 +184,7 @@ ElevatedButton(
   onPressed: () {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const AdminLoginScreen()),
+      MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
     );
   },
   child: const Text("Login as Admin"),
@@ -434,7 +435,7 @@ class QuickActions extends StatelessWidget {
               _ActionTile(title: "Grades", icon: Icons.star_border, color: const Color(0xFF4CB050)),
               _ActionTile(title: "Assignments", icon: Icons.assignment_rounded, color: const Color(0xFFE91E63)),
               _ActionTile(title: "Admin", icon: Icons.admin_panel_settings, color: const Color(0xFF607D8B),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminLoginScreen())),),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),),
             ],
           ),
         ],
