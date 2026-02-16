@@ -433,8 +433,11 @@ class QuickActions extends StatelessWidget {
                 color: const Color(0xFFFF9700),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AnnouncementScreen())),
               ),
-              _ActionTile(title: "HomeWork", icon: Icons.book, color: const Color(0xFF9C28B1)),
-              _ActionTile(title: "Grades", icon: Icons.star_border, color: const Color(0xFF4CB050)),
+              _ActionTile(title: "HomeWork", icon: Icons.book, color: const Color(0xFF9C28B1),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherHomeworkScreen())),),
+              _ActionTile(title: "Grades", icon: Icons.star_border, color: const Color(0xFF4CB050),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherGradesScreen())),),
+              
               _ActionTile(title: "Assignments", icon: Icons.assignment_rounded, color: const Color(0xFFE91E63)),
               _ActionTile(title: "Admin", icon: Icons.admin_panel_settings, color: const Color(0xFF607D8B),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen())),),
@@ -638,7 +641,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Text("Select Your Class.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(labelText: 'Select Class', prefixIcon: Icon(Icons.class_),border: OutlineInputBorder(),),
@@ -652,9 +655,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               },
             ),
             const SizedBox(height: 16),
-            // Text("Select Subject.", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            // const SizedBox(height: 4),
-            DropdownButtonFormField<String>(
+             DropdownButtonFormField<String>(
               decoration: const InputDecoration(labelText: 'Select Subject', prefixIcon: Icon(Icons.book),border: OutlineInputBorder(),),
               value: selectedSubject,
               items: subjects.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
@@ -663,7 +664,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
             const SizedBox(height: 20),
             Text("Student List", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            // i want to show all students in a c big card 
+      
 
            
             if (students.isNotEmpty)
@@ -683,11 +684,56 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           backgroundColor: s['gender'] == 'Boy' ? Colors.blue[200] : Colors.pink[200],
                         ),
                         title: Text('${s['roll']}. ${s['name']} '),
-                        trailing: Switch(
-                          value: s['present'],
-                          onChanged: (v) => setState(() => s['present'] = v),
-                          activeColor: Colors.green,
-                        ),
+                        trailing: Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    GestureDetector(
+      onTap: () {
+        setState(() {
+          s['present'] = true;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: s['present'] ? Colors.green : Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          "P",
+          style: TextStyle(
+            color: s['present'] ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ),
+    const SizedBox(width: 8),
+    GestureDetector(
+      onTap: () {
+        setState(() {
+          s['present'] = false;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: !s['present'] ? Colors.red : Colors.grey[300],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          "A",
+          style: TextStyle(
+            color: !s['present'] ? Colors.white : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
+                        
                       ),
                     );
                   },
@@ -717,7 +763,754 @@ Colors.white,
     );
   }
 }
+//Homework screen
 
+class TeacherHomeworkScreen extends StatefulWidget {
+  const TeacherHomeworkScreen({super.key});
+
+  @override
+  State<TeacherHomeworkScreen> createState() =>
+      _TeacherHomeworkScreenState();
+}
+
+class _TeacherHomeworkScreenState
+    extends State<TeacherHomeworkScreen> {
+
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance;
+
+  final List<String> classes = ["8", "9", "10"];
+  final List<String> subjects = ["Math", "Science", "English"];
+
+  String? selectedClass;
+  String? selectedSubject;
+
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
+
+  String? editingId; // for edit mode
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Manage Homework"),
+        backgroundColor: Colors.blue[800],
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddEditSheet(),
+        child: const Icon(Icons.add),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection("homework")
+            .orderBy("createdAt", descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+
+          if (!snapshot.hasData) {
+            return const Center(
+                child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return const Center(
+                child: Text("No Homework Added"));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data =
+                  docs[index].data() as Map<String, dynamic>;
+              final id = docs[index].id;
+
+              return _buildHomeworkCard(data, id);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHomeworkCard(
+      Map<String, dynamic> hw, String id) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6)
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              "${hw['subject']} • Class ${hw['class']}",
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold)),
+
+          const SizedBox(height: 8),
+
+          Text(hw['title'],
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600)),
+
+          const SizedBox(height: 6),
+          Text(hw['description']),
+
+          const SizedBox(height: 10),
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit,
+                    color: Colors.blue),
+                onPressed: () {
+                  editingId = id;
+                  selectedClass = hw['class'];
+                  selectedSubject = hw['subject'];
+                  titleController.text =
+                      hw['title'];
+                  descriptionController.text =
+                      hw['description'];
+
+                  _showAddEditSheet();
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete,
+                    color: Colors.red),
+                onPressed: () {
+                  _firestore
+                      .collection("homework")
+                      .doc(id)
+                      .delete();
+                },
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showAddEditSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom:
+                  MediaQuery.of(context)
+                      .viewInsets
+                      .bottom,
+              left: 16,
+              right: 16,
+              top: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              Text(
+                  editingId == null
+                      ? "Add Homework"
+                      : "Edit Homework",
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField(
+                value: selectedClass,
+                hint: const Text("Select Class"),
+                items: classes
+                    .map((c) =>
+                        DropdownMenuItem(
+                            value: c,
+                            child:
+                                Text("Class $c")))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedClass =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField(
+                value: selectedSubject,
+                hint: const Text("Select Subject"),
+                items: subjects
+                    .map((s) =>
+                        DropdownMenuItem(
+                            value: s,
+                            child: Text(s)))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedSubject =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller: titleController,
+                decoration:
+                    const InputDecoration(
+                        labelText: "Title"),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller:
+                    descriptionController,
+                decoration:
+                    const InputDecoration(
+                        labelText:
+                            "Description"),
+              ),
+
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed: _saveHomework,
+                child: const Text("Save"),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _saveHomework() async {
+    if (editingId == null) {
+      await _firestore.collection("homework").add({
+        "class": selectedClass,
+        "subject": selectedSubject,
+        "title": titleController.text,
+        "description":
+            descriptionController.text,
+        "createdAt":
+            FieldValue.serverTimestamp(),
+      });
+    } else {
+      await _firestore
+          .collection("homework")
+          .doc(editingId)
+          .update({
+        "class": selectedClass,
+        "subject": selectedSubject,
+        "title": titleController.text,
+        "description":
+            descriptionController.text,
+      });
+
+      editingId = null;
+    }
+
+    // 🔥 CLEAR FIELDS
+    titleController.clear();
+    descriptionController.clear();
+    selectedClass = null;
+    selectedSubject = null;
+
+    Navigator.pop(context);
+  }
+}
+
+
+
+//Grades screen
+
+class TeacherGradesScreen extends StatefulWidget {
+  const TeacherGradesScreen({super.key});
+
+  @override
+  State<TeacherGradesScreen> createState() =>
+      _TeacherGradesScreenState();
+}
+
+class _TeacherGradesScreenState
+    extends State<TeacherGradesScreen> {
+
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance;
+
+  final List<String> classes = ["8", "9", "10"];
+  final List<String> students = [
+    "Aarav",
+    "Ananya",
+    "Rohan"
+  ];
+  final List<String> subjects = [
+    "Math",
+    "Science",
+    "English"
+  ];
+  final List<String> exams = [
+    "Unit Test",
+    "Midterm",
+    "Final"
+  ];
+
+  String? selectedClass;
+  String? selectedStudent;
+  String? selectedSubject;
+  String? selectedExam;
+
+  final marksController = TextEditingController();
+  final totalController =
+      TextEditingController(text: "100");
+
+  String? editingId;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text("Manage Grades"),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.deepPurple,
+        onPressed: () => _showAddEditSheet(),
+        child: const Icon(Icons.add),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection("grades")
+            .orderBy("createdAt",
+                descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+
+          if (!snapshot.hasData) {
+            return const Center(
+                child:
+                    CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return const Center(
+                child:
+                    Text("No Grades Added"));
+          }
+
+          return ListView.builder(
+            padding:
+                const EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data =
+                  docs[index].data()
+                      as Map<String, dynamic>;
+              final id = docs[index].id;
+
+              return _buildGradeCard(
+                  data, id);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGradeCard(
+      Map<String, dynamic> g,
+      String id) {
+
+    double percentage =
+        (g['marks'] / g['total']) * 100;
+
+    Color color;
+    String performance;
+
+    if (percentage >= 80) {
+      color = Colors.green;
+      performance = "Excellent";
+    } else if (percentage >= 60) {
+      color = Colors.orange;
+      performance = "Good";
+    } else {
+      color = Colors.red;
+      performance =
+          "Needs Improvement";
+    }
+
+    return Container(
+      margin:
+          const EdgeInsets.only(bottom: 16),
+      padding:
+          const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius:
+            BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black
+                  .withOpacity(0.05),
+              blurRadius: 6)
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+        children: [
+
+          Text(
+              "${g['student']} • Class ${g['class']}",
+              style:
+                  const TextStyle(
+                      fontWeight:
+                          FontWeight.bold)),
+
+          const SizedBox(height: 8),
+
+          Text(
+              "${g['subject']} - ${g['examType']}"),
+
+          const SizedBox(height: 8),
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment
+                    .spaceBetween,
+            children: [
+              Text(
+                  "Marks: ${g['marks']} / ${g['total']}"),
+              Text(
+                  "${percentage.toStringAsFixed(1)}%"),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          Container(
+            padding:
+                const EdgeInsets
+                    .symmetric(
+                        horizontal: 12,
+                        vertical: 6),
+            decoration:
+                BoxDecoration(
+              color: color,
+              borderRadius:
+                  BorderRadius.circular(
+                      20),
+            ),
+            child: Text(
+              performance,
+              style:
+                  const TextStyle(
+                      color:
+                          Colors.white),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Row(
+            mainAxisAlignment:
+                MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(
+                    Icons.edit,
+                    color:
+                        Colors.blue),
+                onPressed: () {
+                  editingId = id;
+                  selectedClass =
+                      g['class'];
+                  selectedStudent =
+                      g['student'];
+                  selectedSubject =
+                      g['subject'];
+                  selectedExam =
+                      g['examType'];
+                  marksController.text =
+                      g['marks']
+                          .toString();
+                  totalController.text =
+                      g['total']
+                          .toString();
+
+                  _showAddEditSheet();
+                },
+              ),
+              IconButton(
+                icon: const Icon(
+                    Icons.delete,
+                    color: Colors.red),
+                onPressed: () {
+                  _firestore
+                      .collection(
+                          "grades")
+                      .doc(id)
+                      .delete();
+                },
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showAddEditSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+              bottom:
+                  MediaQuery.of(context)
+                      .viewInsets
+                      .bottom,
+              left: 16,
+              right: 16,
+              top: 16),
+          child: Column(
+            mainAxisSize:
+                MainAxisSize.min,
+            children: [
+
+              Text(
+                  editingId == null
+                      ? "Add Grade"
+                      : "Edit Grade",
+                  style:
+                      const TextStyle(
+                          fontSize: 18,
+                          fontWeight:
+                              FontWeight
+                                  .bold)),
+
+              const SizedBox(height: 16),
+
+              DropdownButtonFormField(
+                value: selectedClass,
+                hint:
+                    const Text("Class"),
+                items: classes
+                    .map((c) =>
+                        DropdownMenuItem(
+                            value: c,
+                            child: Text(
+                                "Class $c")))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedClass =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField(
+                value:
+                    selectedStudent,
+                hint: const Text(
+                    "Student"),
+                items: students
+                    .map((s) =>
+                        DropdownMenuItem(
+                            value: s,
+                            child:
+                                Text(s)))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedStudent =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField(
+                value:
+                    selectedSubject,
+                hint:
+                    const Text("Subject"),
+                items: subjects
+                    .map((s) =>
+                        DropdownMenuItem(
+                            value: s,
+                            child:
+                                Text(s)))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedSubject =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField(
+                value: selectedExam,
+                hint:
+                    const Text("Exam"),
+                items: exams
+                    .map((e) =>
+                        DropdownMenuItem(
+                            value: e,
+                            child:
+                                Text(e)))
+                    .toList(),
+                onChanged: (val) =>
+                    selectedExam =
+                        val.toString(),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller:
+                    marksController,
+                keyboardType:
+                    TextInputType
+                        .number,
+                decoration:
+                    const InputDecoration(
+                        labelText:
+                            "Marks"),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextField(
+                controller:
+                    totalController,
+                keyboardType:
+                    TextInputType
+                        .number,
+                decoration:
+                    const InputDecoration(
+                        labelText:
+                            "Total Marks"),
+              ),
+
+              const SizedBox(height: 20),
+
+              ElevatedButton(
+                onPressed:
+                    _saveGrade,
+                child:
+                    const Text("Save"),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
+    );
+  }
+Future<void> _saveGrade() async {
+
+  final marks = int.tryParse(marksController.text) ?? 0;
+  final total = int.tryParse(totalController.text) ?? 100;
+
+
+  final existing = await _firestore
+      .collection("grades")
+      .where("class", isEqualTo: selectedClass)
+      .where("student", isEqualTo: selectedStudent)
+      .where("subject", isEqualTo: selectedSubject)
+      .where("examType", isEqualTo: selectedExam)
+      .get();
+
+  if (editingId == null && existing.docs.isNotEmpty) {
+   
+    ScaffoldMessenger.of(context).showMaterialBanner(
+  MaterialBanner(
+    content: const Text("Grade already exists"),
+    backgroundColor: Colors.red,
+    actions: [
+      TextButton(
+        onPressed: () {
+          ScaffoldMessenger.of(context)
+              .hideCurrentMaterialBanner();
+        },
+        child: const Text("DISMISS", style: TextStyle(color: Colors.white)),
+      )
+    ],
+  ),
+);
+
+ 
+    return;
+  }
+
+  if (editingId == null) {
+
+    await _firestore.collection("grades").add({
+      "class": selectedClass,
+      "student": selectedStudent,
+      "subject": selectedSubject,
+      "examType": selectedExam,
+      "marks": marks,
+      "total": total,
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+  } else {
+  
+    await _firestore
+        .collection("grades")
+        .doc(editingId)
+        .update({
+      "class": selectedClass,
+      "student": selectedStudent,
+      "subject": selectedSubject,
+      "examType": selectedExam,
+      "marks": marks,
+      "total": total,
+    });
+
+    editingId = null;
+  }
+
+ 
+  marksController.clear();
+  totalController.text = "100";
+  selectedClass = null;
+  selectedStudent = null;
+  selectedSubject = null;
+  selectedExam = null;
+
+  Navigator.pop(context);
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Grade Saved Successfully"),
+      backgroundColor: Colors.green,
+    ),
+  );
+}
+}
 //Annoucement Screen
 
 class AnnouncementScreen extends StatefulWidget {
@@ -842,6 +1635,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
+              const SizedBox(height:20),
               const Text(
                 "Enter the announcement.",
                 style: TextStyle(fontSize: 24, color: Colors.black87),
@@ -856,21 +1650,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                   alignLabelWithHint: true,
                 ),
               ),
-              // a clear button to clear the text field
-              // Align(
-              //   alignment: Alignment.centerRight,
-              //   child: TextButton.icon(
-              //     icon: const Icon(Icons.clear),
-              //     label: const Text("Clear"),
-              //     onPressed: () {
-              //       _textController.clear();
-              //       setState(() {
-              //         // _audioPath = null;
-              //         // _ready = false;
-              //       });
-              //     },
-              //   ),
-              // ),
               const SizedBox(height: 24),
               Column(
                 // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -929,7 +1708,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   }
 }
 
-
 class FeesRemainingScreen extends StatefulWidget {
   const FeesRemainingScreen({super.key});
 
@@ -940,294 +1718,368 @@ class FeesRemainingScreen extends StatefulWidget {
 class _FeesRemainingScreenState extends State<FeesRemainingScreen> {
   String? selectedClass;
   String? selectedDivision;
+  String searchQuery = "";
 
-  // Static data - will be replaced with Firebase later
   static final List<Map<String, dynamic>> allStudents = [
-    // Class 10
     {'class': '10', 'division': 'A', 'roll': '01', 'name': 'Aarav Sharma', 'total': 48000, 'paid': 32000, 'pending': 16000},
     {'class': '10', 'division': 'A', 'roll': '02', 'name': 'Ananya Patil', 'total': 48000, 'paid': 48000, 'pending': 0},
-    { 'class': '10', 'division': 'A', 'roll': '03', 'name': 'Vikram Singh', 'total': 48000, 'paid': 24000, 'pending': 24000},
-    {'class': '10', 'division': 'A', 'roll': '04', 'name': 'Sneha Deshmukh', 'total': 48000, 'paid': 48000, 'pending': 0},
-    {'class': '10', 'division': 'A', 'roll': '05', 'name': 'Arjun Jadhav', 'total': 48000, 'paid': 16000, 'pending': 32000},
-    {'class': '10', 'division': 'A', 'roll': '06', 'name': 'Meera Kulkarni', 'total': 48000, 'paid': 40000, 'pending': 8000},
-    {'class': '10', 'division': 'A', 'roll': '07', 'name': 'Riya Kapoor', 'total': 48000, 'paid': 48000, 'pending': 0},
-    {'class': '10', 'division': 'A', 'roll': '08', 'name': 'Kabir Verma', 'total': 48000, 'paid': 20000, 'pending': 28000 },
-    {'class': '10', 'division': 'A', 'roll': '09', 'name': 'Karan Mehta', 'total': 48000, 'paid': 48000, 'pending': 0},
-    {'class': '10', 'division': 'A', 'roll': '10', 'name': 'Kavya Joshi', 'total': 48000, 'paid': 36000, 'pending': 12000},
     {'class': '10', 'division': 'B', 'roll': '01', 'name': 'Rohan Gupta', 'total': 48000, 'paid': 20000, 'pending': 28000},
-    {'class': '10', 'division': 'B', 'roll': '02', 'name': 'Priya Singh', 'total': 48000, 'paid': 40000, 'pending': 8000},
-
-    // Class 9
     {'class': '9', 'division': 'A', 'roll': '01', 'name': 'Sneha Deshmukh', 'total': 45000, 'paid': 45000, 'pending': 0},
-    {'class': '9', 'division': 'B', 'roll': '01', 'name': 'Arjun Jadhav', 'total': 45000, 'paid': 15000, 'pending': 30000},
-    {'class': '9', 'division': 'B', 'roll': '02', 'name': 'Meera Kulkarni', 'total': 45000, 'paid': 30000, 'pending': 15000},
-
-    // Class 8
-    {'class': '8', 'division': 'A', 'roll': '01', 'name': 'Vihaan Rao', 'total': 42000, 'paid': 42000, 'pending': 0},
-    {'class': '8', 'division': 'A', 'roll': '02', 'name': 'Diya Nair', 'total': 42000, 'paid': 10000, 'pending': 32000},
+    {'class': '8', 'division': 'A', 'roll': '01', 'name': 'Vihaan Rao', 'total': 42000, 'paid': 10000, 'pending': 32000},
   ];
 
-  // Computed totals
-  int get totalPaid => allStudents.fold(0, (sum, s) => sum + (s['paid'] as int));
-  int get totalPending => allStudents.fold(0, (sum, s) => sum + (s['pending'] as int));
+ 
+  int get totalPaid =>
+      allStudents.fold(0, (sum, s) => sum + (s['paid'] as int));
 
-  // Available classes
+  int get totalPending =>
+      allStudents.fold(0, (sum, s) => sum + (s['pending'] as int));
+
   List<String> get availableClasses {
     final set = <String>{};
-    for (var s in allStudents) set.add(s['class'] as String);
-    return set.toList()..sort();
-  }
-
-  // Available divisions for selected class
-  List<String> get availableDivisions {
-    if (selectedClass == null) return [];
-    final set = <String>{};
     for (var s in allStudents) {
-      if (s['class'] == selectedClass) set.add(s['division'] as String);
+      set.add(s['class']);
     }
     return set.toList()..sort();
   }
 
-  // Filtered students for selected class + division
+  List<String> get availableDivisions {
+    if (selectedClass == null) return [];
+    final set = <String>{};
+    for (var s in allStudents) {
+      if (s['class'] == selectedClass) {
+        set.add(s['division']);
+      }
+    }
+    return set.toList()..sort();
+  }
+
   List<Map<String, dynamic>> get filteredStudents {
     return allStudents.where((s) {
       bool match = true;
-      if (selectedClass != null) match = match && s['class'] == selectedClass;
-      if (selectedDivision != null) match = match && s['division'] == selectedDivision;
+      if (selectedClass != null) {
+        match = match && s['class'] == selectedClass;
+      }
+      if (selectedDivision != null) {
+        match = match && s['division'] == selectedDivision;
+      }
+      if (searchQuery.isNotEmpty) {
+        match = match &&
+            s['name']
+                .toLowerCase()
+                .contains(searchQuery.toLowerCase());
+      }
       return match;
     }).toList();
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.indigo[50],
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text("Fees Overview"),
-        centerTitle: true,
-        backgroundColor: Colors.indigo[800],
+        title: const Text("Fees Details"),
+        backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
-        elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.indigo[50]!, Colors.blue[50]!],
-          ),
-        ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            // crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Summary Cards (horizontal scrollable)
-              // SingleChildScrollView(
-                // scrollDirection: Axis.horizontal,
-                Row(
-                  children: [
-                    _buildSummaryCard(
-                      title: "Total Paid",
-                      amount: totalPaid,
-                      icon: Icons.payments,
-                      color: Colors.green[700]!,
-                    ),
-                    const SizedBox(width: 16),
-                    _buildSummaryCard(
-                      title: "Total Pending",
-                      amount: totalPending,
-                      icon: Icons.money_off,
-                      color: Colors.red[700]!,
-                    ),
-                  ],
-                ),
-              // ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
 
-              const SizedBox(height: 24),
-
-              // Filters
-              Row(
+           
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: "Class",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
+                    child: TextField(
+                      decoration: const InputDecoration(
+                        hintText: "Search Student Name",
+                        border: InputBorder.none,
                       ),
-                      value: selectedClass,
-                      hint: const Text("Select Class"),
-                      items: availableClasses.map((cls) {
-                        return DropdownMenuItem(value: cls, child: Text("Class $cls"));
-                      }).toList(),
                       onChanged: (value) {
                         setState(() {
-                          selectedClass = value;
-                          selectedDivision = null; // reset division when class changes
+                          searchQuery = value;
                         });
                       },
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        labelText: "Division",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        filled: true,
-                        fillColor: Colors.white,
-                      ),
-                      value: selectedDivision,
-                      hint: const Text("Select Division"),
-                      items: availableDivisions.map((div) {
-                        return DropdownMenuItem(value: div, child: Text("Div $div"));
-                      }).toList(),
-                      onChanged: (value) => setState(() => selectedDivision = value),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.filter_alt_outlined),
+                    onPressed: _showFilterBottomSheet,
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-              // Student List (only if class + division selected)
-              if (selectedClass != null && selectedDivision != null) ...[
-                Text(
-                  "Students - Class $selectedClass • Div $selectedDivision",
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columnSpacing: 16,
-                      headingRowColor: MaterialStateProperty.all(Colors.indigo[100]),
-                      columns: const [
-                        DataColumn(label: Text("Roll", style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text("Name", style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text("Total", style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text("Paid", style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text("Pending", style: TextStyle(fontWeight: FontWeight.bold))),
-                        DataColumn(label: Text("Action")),
-                      ],
-                      rows: filteredStudents.map((student) {
-                        final pending = student['pending'] as int;
-                        return DataRow(cells: [
-                          DataCell(Text(student['roll'].toString())),
-                          DataCell(Text(student['name'])),
-                          DataCell(Text("₹${student['total']}")),
-                          DataCell(Text("₹${student['paid']}", style: const TextStyle(color: Colors.green))),
-                          DataCell(Text(
-                            "₹$pending",
-                            style: TextStyle(color: pending == 0 ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
-                          )),
-                          DataCell(
-                            IconButton(
-                              icon: Icon(Icons.share, color: Colors.blue[700]),
-                              onPressed: () => _shareFeesReport(student),
-                              tooltip: "Share Fees Status",
-                            ),
-                          ),
-                        ]);
-                      }).toList(),
-                    ),
+         
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    "Total Paid",
+                    totalPaid,
+                    Colors.green,
                   ),
                 ),
-              ] else ...[
-                const SizedBox(height: 40),
-                const Center(
-                  child: Text(
-                    "Select Class and Division to view students",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    textAlign: TextAlign.center,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    "Total Pending",
+                    totalPending,
+                    Colors.red,
                   ),
                 ),
               ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+            ),
 
-  Widget _buildSummaryCard({
-    required String title,
-    required int amount,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: 164,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [color.withOpacity(0.9), color.withOpacity(0.7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 40, color: Colors.white),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "₹$amount",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 20),
+
+            if (filteredStudents.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(40),
+                child: Text(
+                  "No Students Found",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const BouncingScrollPhysics(),
+                itemCount: filteredStudents.length,
+                itemBuilder: (context, index) {
+                  final student = filteredStudents[index];
+                  return _buildStudentCard(student);
+                },
               ),
-            ),
           ],
         ),
       ),
     );
   }
 
-  void _shareFeesReport(Map<String, dynamic> student) {
-    final name = student['name'];
-    final roll = student['roll'];
-    final cls = student['class'];
-    final div = student['division'];
-    final total = student['total'];
-    final paid = student['paid'];
-    final pending = student['pending'];
+ 
 
-    final message = """
+  Widget _buildSummaryCard(String title, int amount, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: color)),
+          const SizedBox(height: 8),
+          Text(
+            "₹$amount",
+            style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStudentCard(Map<String, dynamic> student) {
+    final pending = student['pending'] as int;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+
+          Text("Name: ${student['name']}",
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+
+          const SizedBox(height: 6),
+
+          Text(
+              "Class: ${student['class']} - ${student['division']}    Roll: ${student['roll']}"),
+
+          const SizedBox(height: 16),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _feeColumn("Total Fees", student['total'], Colors.black),
+              _feeColumn("Pending Fees", student['pending'],
+                  pending == 0 ? Colors.green : Colors.red),
+              _feeColumn("Paid Fees", student['paid'], Colors.green),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Align(
+            alignment: Alignment.centerRight,
+            child: GestureDetector(
+              onTap: () => _shareFeesReport(student),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Share in Whats App",
+                      style: TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.w600)),
+                  SizedBox(width: 6),
+                  Icon(Icons.share, size: 18, color: Colors.blue),
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _feeColumn(String title, int amount, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title,
+            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        const SizedBox(height: 4),
+        Text("₹$amount",
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              const Text("Filter",
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+
+              const SizedBox(height: 20),
+
+              DropdownButtonFormField<String>(
+                value: selectedClass,
+                hint: const Text("Select Class"),
+                items: availableClasses
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text("Class $c"),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedClass = value;
+                    selectedDivision = null;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 12),
+
+              DropdownButtonFormField<String>(
+                value: selectedDivision,
+                hint: const Text("Select Division"),
+                items: availableDivisions
+                    .map((d) => DropdownMenuItem(
+                          value: d,
+                          child: Text("Div $d"),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedDivision = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        selectedClass = null;
+                        selectedDivision = null;
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: const Text("Clear all"),
+                  ),
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Show Results"),
+                  )
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+ 
+
+  void _shareFeesReport(Map<String, dynamic> student) {
+    Share.share("""
 Dear Parent,
 
 Fees Status Update:
 
-Student: $name (Roll No: $roll, Class: $cls - Div $div)
-Total Fees: ₹$total
-Amount Paid: ₹$paid
-Pending Amount: ₹$pending
+Student: ${student['name']}
+Class: ${student['class']} - ${student['division']}
+Roll No: ${student['roll']}
+
+Total Fees: ₹${student['total']}
+Paid: ₹${student['paid']}
+Pending: ₹${student['pending']}
 
 Please clear the pending fees at the earliest to avoid any inconvenience.
 Contact the school office for payment options or queries.
 
 Thank you,
 MG Public School Administration
-""";
-
-    Share.share(
-      message.trim(),
-      subject: "Fees Status - $name ($cls-$div)",
-    );
+""");
   }
 }

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -18,10 +19,10 @@ class AdminDashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "All Attendance Reports",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+            // const Text(
+            //   "All Attendance Reports",
+            //   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            // ),
             const SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
@@ -44,53 +45,111 @@ class AdminDashboardScreen extends StatelessWidget {
 
                   final reports = snapshot.data!.docs;
 
+  
                   return ListView.builder(
-                    itemCount: reports.length,
-                    itemBuilder: (context, index) {
-                      final data = reports[index].data() as Map<String, dynamic>;
+                    physics: const BouncingScrollPhysics(),
+  itemCount: reports.length,
 
-                      return Card(
-                        
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 3,
-                        child: ListTile(
-                          // leading: CircleAvatar(
-                          //   backgroundColor: Colors.indigo[100],
-                          //   child: const Icon(Icons.school, color: Colors.indigo),
-                          // ),
-                          title: Text(
-                            "${data['class'] ?? 'Unknown Class'} - ${data['subject'] ?? 'Unknown Subject'}",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Date: ${data['date'] ?? 'N/A'}"),
-                              Text("Total: ${data['total'] ?? 0}"),
-                              Text("Present: ${data['present'] ?? 0} | Absent: ${data['absent'] ?? 0}"),
-                              Text(
-                                "Boys: ${data['boysPresent'] ?? 0}P / ${data['boysAbsent'] ?? 0}A   |\n"
-                                "Girls: ${data['girlsPresent'] ?? 0}P / ${data['girlsAbsent'] ?? 0}A",
-                              ),
-                            ],
-                          ),
-                          trailing: Text(
-                            _formatTimestamp(data['timestamp']),
-                            style: const TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                       
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+  itemBuilder: (context, index) {
+    final data = reports[index].data() as Map<String, dynamic>;
+
+    return Container(
+      height: 140,
+      clipBehavior: Clip.antiAlias,
+      
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// 🔹 Subject + Class Row
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.indigo.shade100,
+                child: const Icon(Icons.person, color: Colors.indigo),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Sub: ${data['subject'] ?? ''}   Class: ${data['class'] ?? ''}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Date: ${data['date'] ?? ''}      Time: ${_formatTimestamp(data['timestamp'])}",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          /// 🔹 Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatColumn("Total", data['total'] ?? 0),
+              _buildStatColumn("Present", data['present'] ?? 0),
+              _buildStatColumn("Absent", data['absent'] ?? 0),
+
+              
+        ]),
+             ]),
+    
+                    );
+                },
+        );
+  })
+         ) ])
+      )
     );
   }
+  Widget _buildStatColumn(String title, int value) {
+  return Column(
+    children: [
+      Text(
+        title,
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey.shade600,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        value.toString(),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ],
+  );
+}
+
 
   String _formatTimestamp(Timestamp? ts) {
     if (ts == null) return '';
